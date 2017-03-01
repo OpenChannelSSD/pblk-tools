@@ -1,33 +1,21 @@
-# Object files
+tags
+.idea
+bin/*
+build/*
+examples/bin/*
+tests/bin/*
+*.rej
+*.orig
+*~
+/*.patch
+
 *.o
-*.ko
-*.obj
-*.elf
+*.o[ls]
 
-# Precompiled Headers
-*.gch
-*.pch
+cscope.out
 
-# Libraries
-*.lib
-*.a
-*.la
-*.lo
+/src/liblightnvm.a
+/src/liblightnvm.so*
 
-# Shared objects (inc. Windows DLLs)
-*.dll
-*.so
-*.so.*
-*.dylib
-
-# Executables
-*.exe
-*.out
-*.app
-*.i*86
-*.x86_64
-*.hex
-
-# Debug files
-*.dSYM/
-*.su
+/tests/dflash_test
+/tests/lib_test
