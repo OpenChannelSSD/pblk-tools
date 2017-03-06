@@ -22,6 +22,7 @@ static struct nvm_cli_cmd cmds[] = {
 static struct nvm_cli cli = {
 	.title = "NVM pblk ",
 	.descr_short = "Perform verification of pblk meta data",
+	.descr_long = "See http://lightnvm.io/pblk-tools for additional info",
 	.cmds = cmds,
 	.ncmds = sizeof(cmds) / sizeof(cmds[0]),
 };
