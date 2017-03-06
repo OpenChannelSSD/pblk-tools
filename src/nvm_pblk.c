@@ -4,32 +4,43 @@
 #include <stdio.h>
 #include <liblightnvm_cli.h>
 
-int mdck(NVM_CLI_CMD_ARGS *args)
+int mdck(struct nvm_cli *cli)
 {
 	return 0;
 }
 
-static NVM_CLI_CMD cmds[] = {
-	{"mdck", mdck, NVM_CLI_ARG_NONE, NULL},
+/**
+ * Command-line interface (CLI) boiler-plate
+ */
+
+/* Define commands */
+static struct nvm_cli_cmd cmds[] = {
+	{"mdck",	mdck,	NVM_CLI_ARG_DEV_PATH, NVM_CLI_OPT_DEFAULT},
 };
 
-static int ncmds = sizeof(cmds) / sizeof(cmds[0]);
+/* Define the CLI */
+static struct nvm_cli cli = {
+	.title = "NVM pblk ",
+	.descr_short = "Perform verification of pblk meta data",
+	.cmds = cmds,
+	.ncmds = sizeof(cmds) / sizeof(cmds[0]),
+};
 
+/* Initialize and run */
 int main(int argc, char **argv)
 {
-	NVM_CLI_CMD *cmd;
-	int ret = 0;
+	int res = 0;
 
-	cmd = nvm_cli_setup(argc, argv, cmds, ncmds);
-	if (cmd) {
-		ret = cmd->func(cmd->args);
-	} else {
-		nvm_cli_usage(argv[0], "NVM PBLK ", cmds, ncmds);
-		ret = 1;
+	if (nvm_cli_init(&cli, argc, argv) < 0) {
+		perror("FAILED");
+		return 1;
 	}
+
+	res = nvm_cli_run(&cli);
+	if (res)
+		perror(cli.cmd.name);
 	
-	nvm_cli_teardown(cmd);
+	nvm_cli_destroy(&cli);
 
-	return ret != 0;
+	return res;
 }
-
