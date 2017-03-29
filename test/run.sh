@@ -42,8 +42,3 @@ done
 sync
 
 nvm_pblk mdck $DEV_PATH
-
-for LINE_SMETA in /tmp/line*.smeta
-do
-	hexdump -n 60 -C $LINE_SMETA
-done
