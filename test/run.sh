@@ -22,12 +22,25 @@ ELUN=$(( $TLUNS - 1 ))
 if [ ! -e $PBLK_PATH ]; then
 	echo "# Creating pblk instance"
 	sudo nvme lnvm create -d $DEV_NAME -n $PBLK_NAME -t pblk -b 0 -e $ELUN
+	if [ "$?" -ne 0 ]; then
+		echo "# Failed: exiting"
+		exit 1
+	fi
 fi
 
 if [ ! -e $FS_PATH ]; then
 	mkdir $FS_PATH
 	sudo mkfs -t ext4 $PBLK_PATH
+	if [ "$?" -ne 0 ]; then
+		echo "# Failed: exiting"
+		exit 1
+	fi
+
 	sudo mount $PBLK_PATH $FS_PATH
+	if [ "$?" -ne 0 ]; then
+		echo "# Failed: exiting"
+		exit 1
+	fi
 fi
 
 for FILE in $FILES
