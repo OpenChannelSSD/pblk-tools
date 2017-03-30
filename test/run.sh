@@ -95,4 +95,6 @@ done
 sync
 
 echo "# Reading meta to $MD_PATH"
-nvm_pblk mdck $DEV_PATH > $MD_PATH
+nvm_pblk mdck $DEV_PATH 2>&1 | tee -a $MD_PATH
+
+echo "# meta is available at $MD_PATH"
