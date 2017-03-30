@@ -268,7 +268,7 @@ int line_check_shallow(struct line *line)
 
 void status_pr(const char *task, size_t cur, size_t total)
 {
-	printf("status: {task: '%s', cur: %lu, total: %lu}", task, cur, total);
+	printf("status: {task: '%s', cur: %lu, total: %lu}\n", task, cur, total);
 }
 
 int cmd_mdck(struct nvm_cli *cli)
