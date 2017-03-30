@@ -16,7 +16,7 @@ MD_NAME="${DEV_NAME}_${PBLK_NAME}.meta"
 MD_PATH="/tmp/$MD_NAME"
 
 # probe..
-nvm_dev geo $DEV_PATH
+GEO=`nvm_dev geo $DEV_PATH`
 if [ "$?" -ne 0 ]; then
 	echo "# FAILED: probing device, exiting"
 	exit 1
