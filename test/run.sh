@@ -12,6 +12,9 @@ FS_PATH="/tmp/$FS_NAME"
 FILES="1 2 4 8 16 32 64 128 256"
 FILES_OVERWRITE=0
 
+MD_NAME="${DEV_NAME}_${PBLK_NAME}.meta"
+MD_PATH="/tmp/$MD_NAME"
+
 # probe..
 nvm_dev geo $DEV_PATH
 if [ "$?" -ne 0 ]; then
@@ -61,4 +64,4 @@ done
 
 sync
 
-nvm_pblk mdck $DEV_PATH
+nvm_pblk mdck $DEV_PATH > $MD_PATH
