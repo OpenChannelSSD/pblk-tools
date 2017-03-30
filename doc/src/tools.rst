@@ -27,3 +27,15 @@ nvm_pblk
 ========
 
 ... meta-data checking ...
+
+.. literalinclude: nvm_pblk_usage.out
+   :language: none
+
+Check meta-data
+---------------
+
+.. literalinclude:: nvm_pblk_mdck.cmd
+   :language: bash
+
+.. literalinclude:: nvm_pblk_mdck.out
+   :language: bash

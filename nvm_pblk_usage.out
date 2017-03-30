@@ -1,0 +1,14 @@
+NVM pblk  -- Ver { major(0), minor(0), patch(1) }
+
+Perform verification of pblk meta data
+
+Usage:
+ nvm_pblk         mdck dev_path [-h] [-v]
+
+Options:
+ -h       Print usage
+ -v       Dump CLI state to stdout
+
+Description:
+
+See http://lightnvm.io/pblk-tools for additional info
