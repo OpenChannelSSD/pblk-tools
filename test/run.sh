@@ -12,6 +12,13 @@ FS_PATH="/tmp/$FS_NAME"
 FILES="1 2 4 8 16 32 64 128 256"
 FILES_OVERWRITE=0
 
+# probe..
+nvm_dev geo $DEV_PATH
+if [ "$?" -ne 0 ]; then
+	echo "# FAILED: probing device, exiting"
+	exit 1
+fi
+
 # Grab geometry
 NCHANNELS=$(nvm_dev geo $DEV_PATH | grep "nchannels" | cut -d ":" -f 2)
 NLUNS=$(nvm_dev geo $DEV_PATH | grep "nluns" | cut -d ":" -f 2)
@@ -23,7 +30,7 @@ if [ ! -e $PBLK_PATH ]; then
 	echo "# Creating pblk instance"
 	sudo nvme lnvm create -d $DEV_NAME -n $PBLK_NAME -t pblk -b 0 -e $ELUN
 	if [ "$?" -ne 0 ]; then
-		echo "# Failed: exiting"
+		echo "# FAILED: exiting"
 		exit 1
 	fi
 fi
@@ -32,13 +39,13 @@ if [ ! -e $FS_PATH ]; then
 	mkdir $FS_PATH
 	sudo mkfs -t ext4 $PBLK_PATH
 	if [ "$?" -ne 0 ]; then
-		echo "# Failed: exiting"
+		echo "# FAILED: exiting"
 		exit 1
 	fi
 
 	sudo mount $PBLK_PATH $FS_PATH
 	if [ "$?" -ne 0 ]; then
-		echo "# Failed: exiting"
+		echo "# FAILED: exiting"
 		exit 1
 	fi
 fi
