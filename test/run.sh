@@ -34,7 +34,7 @@ TLUNS=$(( $NCHANNELS * $NLUNS ))
 ELUN=$(( $TLUNS - 1 ))
 
 if [ ! -e $PBLK_PATH ]; then
-	echo "# Creating pblk instance"
+	echo "# Creating pblk instance -d $DEV_NAME -n $PBLK_NAME -e $ELUN"
 
 	NVME_OUT=$(nvme lnvm create -d $DEV_NAME -n $PBLK_NAME -t pblk -b 0 -e $ELUN)
 	if [ "$?" -ne 0 ]; then
