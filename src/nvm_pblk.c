@@ -266,6 +266,11 @@ int line_check_shallow(struct line *line)
 		(line->smeta.seq_nr != line->emeta.seq_nr);
 }
 
+void status_pr(const char *task, size_t cur, size_t total)
+{
+	printf("status: {task: '%s', cur: %lu, total: %lu}", task, cur, total);
+}
+
 int cmd_mdck(struct nvm_cli *cli)
 {
 	const struct nvm_geo *geo = cli->args.geo;
@@ -297,6 +302,9 @@ int cmd_mdck(struct nvm_cli *cli)
 		lun_addr.g.ch = tlun % geo->nchannels;
 		lun_addr.g.lun = (tlun / geo->nchannels) % geo->nluns;
 
+		if (!cli->opts.brief)
+			status_pr("bbt_get", tlun, tluns);
+
 		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
 		if (!bbts[tlun]) {
 			free(smeta_buf);
@@ -317,6 +325,9 @@ int cmd_mdck(struct nvm_cli *cli)
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
 
+		if (!cli->opts.brief)
+			status_pr("line_setup", i, geo->nblocks);
+
 		line->id = i;
 		line_smeta_addr_calc(line, dev, bbts);
 		line_emeta_addr_calc(line, dev, bbts);
@@ -325,6 +336,9 @@ int cmd_mdck(struct nvm_cli *cli)
 	// Read smeta for all lines from media into data structures
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
+
+		if (!cli->opts.brief)
+			status_pr("smeta_read", i, geo->nblocks);
 
 		memset(smeta_buf, 0 , smeta_buf_len);
 		if (!nvm_addr_read(dev, &line->smeta_addr, 1, smeta_buf, NULL,
@@ -335,6 +349,9 @@ int cmd_mdck(struct nvm_cli *cli)
 	// Read emeta for all lines from media into data structures
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
+
+		if (!cli->opts.brief)
+			status_pr("emeta_read", i, geo->nblocks);
 
 		memset(smeta_buf, 0 , smeta_buf_len);
 		if (!nvm_addr_read(dev, &line->emeta_addr, 1, smeta_buf, NULL,
