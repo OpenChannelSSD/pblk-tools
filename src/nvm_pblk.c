@@ -4,6 +4,9 @@
 #include <stdio.h>
 #include <liblightnvm_cli.h>
 
+#define PBLK_META_VER 0x1
+#define PBLK_META_IDENT 0x70626c6b
+
 enum line_type {
 	PBLK_LINETYPE_FREE = 0,
 	PBLK_LINETYPE_LOG = 1,
