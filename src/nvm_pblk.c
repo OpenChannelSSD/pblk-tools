@@ -278,27 +278,44 @@ void status_pr(const char *task, size_t cur, size_t total)
 
 int cmd_mdck(struct nvm_cli *cli)
 {
+	int res = 0;
 	const struct nvm_geo *geo = cli->args.geo;
 	struct nvm_dev *dev = cli->args.dev;
-	size_t smeta_buf_len = geo->sector_nbytes;
 	const size_t tluns = geo->nchannels * geo->nluns;
-	const struct nvm_bbt **bbts;
-	char *smeta_buf;
-	struct line *lines;
+	const struct nvm_bbt **bbts = NULL;
+	struct line *lines = NULL;
+	char *smeta_buf = NULL;
+	char *emeta_buf = NULL;
+	size_t smeta_buf_len;
+	size_t emeta_buf_len;
+
+	smeta_buf_len = geo->sector_nbytes;
+
+	emeta_buf_len = geo->sector_nbytes * geo->nsectors * geo->nplanes * \
+			tluns;
 
 	// Allocate smeta read buffer
 	smeta_buf = nvm_buf_alloc(geo, smeta_buf_len);
 	if (!smeta_buf) {
 		errno = ENOMEM;
-		return -1;
+		res = -1;
+		goto mdck_exit;
+	}
+
+	// Allocate smeta read buffer
+	emeta_buf = nvm_buf_alloc(geo, emeta_buf_len);
+	if (!emeta_buf) {
+		errno = ENOMEM;
+		res = -1;
+		goto mdck_exit;
 	}
 
 	// Retrieve all bad-block-tables
 	bbts = malloc(tluns * sizeof(const struct nvm_bbt*));
 	if (!bbts) {
 		errno = ENOMEM;
-		free(smeta_buf);
-		return -1;
+		res = -1;
+		goto mdck_exit;
 	}
 	for (size_t tlun = 0; tlun < tluns; ++tlun) {
 		struct nvm_ret ret = { 0 };
@@ -312,9 +329,9 @@ int cmd_mdck(struct nvm_cli *cli)
 
 		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
 		if (!bbts[tlun]) {
-			free(smeta_buf);
-			free(bbts);
-			return -1;	// Propagate errno from nvm_bbt_get
+			// Propagate errno from nvm_bbt_get
+			res = -1;
+			goto mdck_exit;
 		}
 	}
 
@@ -322,9 +339,8 @@ int cmd_mdck(struct nvm_cli *cli)
 	lines = malloc(geo->nblocks * sizeof(*lines));
 	if (!lines) {
 		errno = ENOMEM;
-		free(smeta_buf);
-		free(bbts);
-		return -1;
+		res = -1;
+		goto mdck_exit;
 	}
 	memset(lines, 0, geo->nblocks * sizeof(*lines));
 	for (size_t i = 0; i < geo->nblocks; ++i) {
@@ -374,11 +390,13 @@ int cmd_mdck(struct nvm_cli *cli)
 		}
 	}
 
+mdck_exit:
 	free(smeta_buf);
+	free(emeta_buf);
 	free(bbts);
 	free(lines);
 
-	return 0;
+	return res;
 }
 
 //
