@@ -218,7 +218,8 @@ int line_emeta_addr_calc(struct line *line, struct nvm_dev *dev,
 	const struct nvm_geo *geo = nvm_dev_get_geo(dev);
 	const int tluns = geo->nchannels * geo->nluns;
 
-	for (int tlun = tluns - 1; tlun >= 0; --tlun) {
+	//for (int tlun = tluns - 1; tlun >= 0; --tlun) {
+	for (int tlun = 0; tlun < tluns; ++tlun) {
 		const struct nvm_bbt *bbt = bbts[tlun];
 		const size_t blk_off = line->id * geo->nplanes;
 		const size_t blk_lim = blk_off + geo->nplanes;
@@ -271,11 +272,6 @@ int line_check_shallow(struct line *line)
 		(line->smeta.seq_nr != line->emeta.seq_nr);
 }
 
-void status_pr(const char *task, size_t cur, size_t total)
-{
-	printf("status: {task: '%s', cur: %lu, total: %lu}\n", task, cur, total);
-}
-
 int cmd_mdck(struct nvm_cli *cli)
 {
 	int res = 0;
@@ -324,8 +320,8 @@ int cmd_mdck(struct nvm_cli *cli)
 		lun_addr.g.ch = tlun % geo->nchannels;
 		lun_addr.g.lun = (tlun / geo->nchannels) % geo->nluns;
 
-		if (!cli->opts.brief)
-			status_pr("bbt_get", tlun, tluns);
+		if (cli->opts.status)
+			nvm_cli_status_pr("bbt_get", tlun, tluns);
 
 		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
 		if (!bbts[tlun]) {
@@ -346,11 +342,12 @@ int cmd_mdck(struct nvm_cli *cli)
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
 
-		if (!cli->opts.brief)
-			status_pr("line_setup", i, geo->nblocks);
+		if (cli->opts.status)
+			nvm_cli_status_pr("line_setup", i, geo->nblocks);
 
 		line->id = i;
 		line_smeta_addr_calc(line, dev, bbts);
+
 		line_emeta_addr_calc(line, dev, bbts);
 	}
 
@@ -358,8 +355,8 @@ int cmd_mdck(struct nvm_cli *cli)
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
 
-		if (!cli->opts.brief)
-			status_pr("smeta_read", i, geo->nblocks);
+		if (cli->opts.status)
+			nvm_cli_status_pr("smeta_read", i, geo->nblocks);
 
 		memset(smeta_buf, 0 , smeta_buf_len);
 		if (!nvm_addr_read(dev, &line->smeta_addr, 1, smeta_buf, NULL,
@@ -371,10 +368,10 @@ int cmd_mdck(struct nvm_cli *cli)
 	for (size_t i = 0; i < geo->nblocks; ++i) {
 		struct line *line = &lines[i];
 
-		if (!cli->opts.brief)
-			status_pr("emeta_read", i, geo->nblocks);
+		if (cli->opts.status)
+			nvm_cli_status_pr("emeta_read", i, geo->nblocks);
 
-		memset(smeta_buf, 0 , smeta_buf_len);
+		memset(emeta_buf, 0 , emeta_buf_len);
 		if (!nvm_addr_read(dev, &line->emeta_addr, 1, smeta_buf, NULL,
 				   0x0, &line->emeta_ret))
 			line_emeta_from_buf(smeta_buf, &line->emeta);
@@ -405,7 +402,7 @@ mdck_exit:
 
 /* Define commands */
 static struct nvm_cli_cmd cmds[] = {
-	{"mdck", cmd_mdck, NVM_CLI_ARG_DEV_PATH, NVM_CLI_OPT_DEFAULT},
+	{"mdck", cmd_mdck, NVM_CLI_ARG_DEV_PATH, NVM_CLI_OPT_DEFAULT | NVM_CLI_OPT_STATUS | NVM_CLI_OPT_BRIEF},
 };
 
 /* Define the CLI */
