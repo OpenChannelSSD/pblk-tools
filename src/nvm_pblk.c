@@ -253,11 +253,13 @@ int line_check_shallow(struct line *line)
 {
 	const int hdr_sz = sizeof(struct line_header);
 
+	// TODO: CRC-check smeta header
+
 	// Compare headers
 	if (memcmp(&line->smeta.header, &line->emeta.header, hdr_sz))
 		return -1;
 
-	// TODO: CRC checks and other checks?
+	// TODO: other checks?
 
 	// Check return-code of read commands
 	if (line->smeta_ret.status || line->smeta_ret.result ||
