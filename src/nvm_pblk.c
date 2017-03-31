@@ -272,7 +272,7 @@ int line_check_shallow(struct line *line)
 		(line->smeta.seq_nr != line->emeta.seq_nr);
 }
 
-int cmd_mdck(struct nvm_cli *cli)
+int cmd_meta_dump(struct nvm_cli *cli)
 {
 	int res = 0;
 	const struct nvm_geo *geo = cli->args.geo;
@@ -402,7 +402,12 @@ mdck_exit:
 
 /* Define commands */
 static struct nvm_cli_cmd cmds[] = {
-	{"mdck", cmd_mdck, NVM_CLI_ARG_DEV_PATH, NVM_CLI_OPT_DEFAULT | NVM_CLI_OPT_STATUS | NVM_CLI_OPT_BRIEF},
+	{
+		"meta_dump",
+		cmd_meta_dump,
+		NVM_CLI_ARG_DEV_PATH,
+		NVM_CLI_OPT_DEFAULT | NVM_CLI_OPT_STATUS | NVM_CLI_OPT_BRIEF
+	},
 };
 
 /* Define the CLI */
