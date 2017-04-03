@@ -259,7 +259,7 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 	struct line *lines = NULL;
 	struct nvm_dev *dev = cli->args.dev;
 	const struct nvm_geo *geo = cli->args.geo;
-	const size_t tluns = (lun_bgn - lun_end) + 1;
+	const size_t tluns = (lun_end - lun_bgn) + 1;
 	const size_t nlines = geo->nblocks;
 	const struct nvm_bbt **bbts = NULL;
 	char *smeta_buf = NULL;
@@ -410,7 +410,7 @@ int cmd_meta_dump(struct nvm_cli *cli)
 	const size_t nlines = geo->nblocks;
 	struct line *lines = NULL;
 
-	lines = pblk_meta_scan(cli, 0, geo->nluns - 1);	// Fetch lines
+	lines = pblk_meta_scan(cli, 0, (geo->nchannels * geo->nluns) - 1);
 	if (!lines) {
 		return 1;
 	}

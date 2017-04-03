@@ -3,11 +3,13 @@ NVM pblk  -- Ver { major(0), minor(0), patch(1) }
 Perform verification of pblk meta data
 
 Usage:
- nvm_pblk         mdck dev_path [-h] [-v]
+ nvm_pblk    meta_dump dev_path [-h] [-b] [-v] [-s]
 
 Options:
  -h       Print usage
+ -b       Brief, minimal output
  -v       Dump CLI state to stdout
+ -s       Dump status msgs to stdout
 
 Description:
 
