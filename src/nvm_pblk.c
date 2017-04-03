@@ -69,6 +69,32 @@ struct line {
 	struct nvm_ret emeta_ret;
 };
 
+static inline uint32_t line_header_crc(struct line_header *hdr)
+{
+	return crc32(0, ((unsigned char *)hdr) + sizeof(hdr->crc),
+		     sizeof(*hdr) - sizeof(hdr->crc)
+	) ^ (~(uint32_t)0);
+}
+
+static inline uint32_t line_smeta_crc(struct line_smeta *smeta, size_t len)
+{
+	return crc32(0, ((unsigned char *)smeta) +
+			sizeof(smeta->header) + sizeof(smeta->crc),
+			len -
+			sizeof(smeta->header) - sizeof(smeta->crc)
+	) ^ (~(uint32_t)0);
+}
+
+static inline uint32_t line_emeta_crc(struct line_emeta *emeta, size_t len)
+{
+	return crc32(0, ((unsigned char *)emeta) +
+			sizeof(emeta->header) + sizeof(emeta->crc),
+			len -
+			sizeof(emeta->header) - sizeof(emeta->crc)
+	) ^ (~(uint32_t)0);
+}
+
+
 void line_header_pr(const struct line_header *header)
 {
 	if (!header) {
@@ -437,6 +463,10 @@ int cmd_meta_check(struct nvm_cli *cli)
 	smeta.header.type = PBLK_LINETYPE_DATA;
 	smeta.header.version = 0x1;
 	smeta.header.id = 16;
+
+	line_smeta_pr(&smeta);
+
+	smeta.header.crc = line_header_crc(&smeta.header);
 
 	line_smeta_pr(&smeta);
 

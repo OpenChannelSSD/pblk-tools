@@ -44,7 +44,7 @@ foreach(SRC_FN ${SOURCE_FILES})
 	target_include_directories(${EXE_FN} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 	target_link_libraries(${EXE_FN} ${liblightnvm_cli_LIBRARY})
 	target_link_libraries(${EXE_FN} ${liblightnvm_LIBRARY})
-	target_link_libraries(${EXE_FN} udev ${CMAKE_THREAD_LIBS_INIT})
+	target_link_libraries(${EXE_FN} udev ${CMAKE_THREAD_LIBS_INIT} z)
 
 	install(TARGETS ${EXE_FN} DESTINATION bin)
 endforeach()
