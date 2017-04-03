@@ -244,6 +244,138 @@ int line_emeta_addr_calc(struct line *line, struct nvm_dev *dev,
 }
 
 /**
+ * Scan the given device lun range for meta-data
+ *
+ * @param dev Device handle obtained with `nvm_dev_open`
+ * @param lun_bgn First lun in flattened range
+ * @param lun_end Last lun in flattened range
+ *
+ * @returns On success, a pointer to array of 'struct line'. On error, NULL is
+ * returned and errno set to indicate the error.
+ */
+struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
+{
+	int res = 0;
+	struct line *lines = NULL;
+	struct nvm_dev *dev = cli->args.dev;
+	const struct nvm_geo *geo = cli->args.geo;
+	const size_t tluns = (lun_bgn - lun_end) + 1;
+	const size_t nlines = geo->nblocks;
+	const struct nvm_bbt **bbts = NULL;
+	char *smeta_buf = NULL;
+	char *emeta_buf = NULL;
+	size_t smeta_buf_len;
+	size_t emeta_buf_len;
+
+	if (lun_bgn > lun_end) {
+		errno = EINVAL;
+		return NULL;
+	}
+
+	smeta_buf_len = geo->sector_nbytes;
+	emeta_buf_len = geo->sector_nbytes * geo->nsectors * geo->nplanes * \
+			tluns;
+
+	// Allocate smeta read buffer
+	smeta_buf = nvm_buf_alloc(geo, smeta_buf_len);
+	if (!smeta_buf) {
+		errno = ENOMEM;
+		res = -1;
+		goto scan_exit;
+	}
+
+	// Allocate smeta read buffer
+	emeta_buf = nvm_buf_alloc(geo, emeta_buf_len);
+	if (!emeta_buf) {
+		errno = ENOMEM;
+		res = -1;
+		goto scan_exit;
+	}
+
+	// Retrieve all bad-block-tables
+	bbts = malloc(tluns * sizeof(const struct nvm_bbt*));
+	if (!bbts) {
+		errno = ENOMEM;
+		res = -1;
+		goto scan_exit;
+	}
+	for (size_t tlun = 0; tlun < tluns; ++tlun) {
+		struct nvm_ret ret = { 0 };
+		struct nvm_addr lun_addr = { 0 };
+
+		lun_addr.g.ch = tlun % geo->nchannels;
+		lun_addr.g.lun = (tlun / geo->nchannels) % geo->nluns;
+
+		if (cli->opts.status)
+			nvm_cli_status_pr("bbt_get", tlun, tluns);
+
+		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
+		if (!bbts[tlun]) {
+			// Propagate errno from nvm_bbt_get
+			res = -1;
+			goto scan_exit;
+		}
+	}
+
+	// Construct 'lines' containing id, smeta address and emeta addresses
+	lines = malloc(nlines * sizeof(*lines));
+	if (!lines) {
+		errno = ENOMEM;
+		res = -1;
+		goto scan_exit;
+	}
+	memset(lines, 0, nlines * sizeof(*lines));
+	for (size_t i = 0; i < nlines; ++i) {
+		struct line *line = &lines[i];
+
+		if (cli->opts.status)
+			nvm_cli_status_pr("line_setup", i, nlines);
+
+		line->id = i;
+		line_smeta_addr_calc(line, dev, bbts);
+
+		line_emeta_addr_calc(line, dev, bbts);
+	}
+
+	// Read smeta for all lines from media into data structures
+	for (size_t i = 0; i < nlines; ++i) {
+		struct line *line = &lines[i];
+
+		if (cli->opts.status)
+			nvm_cli_status_pr("smeta_read", i, nlines);
+
+		memset(smeta_buf, 0 , smeta_buf_len);
+		if (!nvm_addr_read(dev, &line->smeta_addr, 1, smeta_buf, NULL,
+				   0x0, &line->smeta_ret))
+			line_smeta_from_buf(smeta_buf, &line->smeta);
+	}
+
+	// Read emeta for all lines from media into data structures
+	for (size_t i = 0; i < nlines; ++i) {
+		struct line *line = &lines[i];
+
+		if (cli->opts.status)
+			nvm_cli_status_pr("emeta_read", i, nlines);
+
+		memset(emeta_buf, 0 , emeta_buf_len);
+		if (!nvm_addr_read(dev, &line->emeta_addr, 1, smeta_buf, NULL,
+				   0x0, &line->emeta_ret))
+			line_emeta_from_buf(smeta_buf, &line->emeta);
+	}
+
+scan_exit:
+	free(smeta_buf);
+	free(emeta_buf);
+	free(bbts);
+	if (res) {
+		free(lines);
+		lines = NULL;
+	}
+
+	return lines;
+}
+
+/**
  * Perform a shallow comparison of the given line smeta and emeta
  * structures
  *
@@ -274,126 +406,25 @@ int line_check_shallow(struct line *line)
 
 int cmd_meta_dump(struct nvm_cli *cli)
 {
-	int res = 0;
 	const struct nvm_geo *geo = cli->args.geo;
-	struct nvm_dev *dev = cli->args.dev;
-	const size_t tluns = geo->nchannels * geo->nluns;
-	const struct nvm_bbt **bbts = NULL;
+	const size_t nlines = geo->nblocks;
 	struct line *lines = NULL;
-	char *smeta_buf = NULL;
-	char *emeta_buf = NULL;
-	size_t smeta_buf_len;
-	size_t emeta_buf_len;
 
-	smeta_buf_len = geo->sector_nbytes;
-
-	emeta_buf_len = geo->sector_nbytes * geo->nsectors * geo->nplanes * \
-			tluns;
-
-	// Allocate smeta read buffer
-	smeta_buf = nvm_buf_alloc(geo, smeta_buf_len);
-	if (!smeta_buf) {
-		errno = ENOMEM;
-		res = -1;
-		goto mdck_exit;
-	}
-
-	// Allocate smeta read buffer
-	emeta_buf = nvm_buf_alloc(geo, emeta_buf_len);
-	if (!emeta_buf) {
-		errno = ENOMEM;
-		res = -1;
-		goto mdck_exit;
-	}
-
-	// Retrieve all bad-block-tables
-	bbts = malloc(tluns * sizeof(const struct nvm_bbt*));
-	if (!bbts) {
-		errno = ENOMEM;
-		res = -1;
-		goto mdck_exit;
-	}
-	for (size_t tlun = 0; tlun < tluns; ++tlun) {
-		struct nvm_ret ret = { 0 };
-		struct nvm_addr lun_addr = { 0 };
-
-		lun_addr.g.ch = tlun % geo->nchannels;
-		lun_addr.g.lun = (tlun / geo->nchannels) % geo->nluns;
-
-		if (cli->opts.status)
-			nvm_cli_status_pr("bbt_get", tlun, tluns);
-
-		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
-		if (!bbts[tlun]) {
-			// Propagate errno from nvm_bbt_get
-			res = -1;
-			goto mdck_exit;
-		}
-	}
-
-	// Construct 'lines' containing id, smeta address and emeta addresses
-	lines = malloc(geo->nblocks * sizeof(*lines));
+	lines = pblk_meta_scan(cli, 0, geo->nluns - 1);	// Fetch lines
 	if (!lines) {
-		errno = ENOMEM;
-		res = -1;
-		goto mdck_exit;
+		return 1;
 	}
-	memset(lines, 0, geo->nblocks * sizeof(*lines));
-	for (size_t i = 0; i < geo->nblocks; ++i) {
+
+	for (size_t i = 0; i < nlines; ++i) {	// Dump them stdout
 		struct line *line = &lines[i];
 
-		if (cli->opts.status)
-			nvm_cli_status_pr("line_setup", i, geo->nblocks);
-
-		line->id = i;
-		line_smeta_addr_calc(line, dev, bbts);
-
-		line_emeta_addr_calc(line, dev, bbts);
+		printf("\n");
+		line_pr(line);
 	}
 
-	// Read smeta for all lines from media into data structures
-	for (size_t i = 0; i < geo->nblocks; ++i) {
-		struct line *line = &lines[i];
-
-		if (cli->opts.status)
-			nvm_cli_status_pr("smeta_read", i, geo->nblocks);
-
-		memset(smeta_buf, 0 , smeta_buf_len);
-		if (!nvm_addr_read(dev, &line->smeta_addr, 1, smeta_buf, NULL,
-				   0x0, &line->smeta_ret))
-			line_smeta_from_buf(smeta_buf, &line->smeta);
-	}
-
-	// Read emeta for all lines from media into data structures
-	for (size_t i = 0; i < geo->nblocks; ++i) {
-		struct line *line = &lines[i];
-
-		if (cli->opts.status)
-			nvm_cli_status_pr("emeta_read", i, geo->nblocks);
-
-		memset(emeta_buf, 0 , emeta_buf_len);
-		if (!nvm_addr_read(dev, &line->emeta_addr, 1, smeta_buf, NULL,
-				   0x0, &line->emeta_ret))
-			line_emeta_from_buf(smeta_buf, &line->emeta);
-	}
-
-	// Present the results
-	for (size_t i = 0; i < geo->nblocks; ++i) {
-		struct line *line = &lines[i];
-
-		if ((!cli->opts.brief) || line_check_shallow(line)) {
-			printf("\n");
-			line_pr(line);
-		}
-	}
-
-mdck_exit:
-	free(smeta_buf);
-	free(emeta_buf);
-	free(bbts);
 	free(lines);
 
-	return res;
+	return 0;
 }
 
 //
