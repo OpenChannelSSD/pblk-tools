@@ -2,6 +2,7 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
+#include <zlib.h>
 #include <liblightnvm_cli.h>
 
 #define PBLK_META_VER 0x1
@@ -427,6 +428,21 @@ int cmd_meta_dump(struct nvm_cli *cli)
 	return 0;
 }
 
+int cmd_meta_check(struct nvm_cli *cli)
+{
+	struct line_smeta smeta = { 0 };
+
+	smeta.header.crc = 0x42862eb8;
+	smeta.header.identifier = 0x70626c6b;
+	smeta.header.type = PBLK_LINETYPE_DATA;
+	smeta.header.version = 0x1;
+	smeta.header.id = 16;
+
+	line_smeta_pr(&smeta);
+
+	return 0;
+}
+
 //
 // Remaining code is CLI boiler-plate
 //
@@ -439,6 +455,13 @@ static struct nvm_cli_cmd cmds[] = {
 		NVM_CLI_ARG_DEV_PATH,
 		NVM_CLI_OPT_DEFAULT | NVM_CLI_OPT_STATUS | NVM_CLI_OPT_BRIEF
 	},
+	{
+		"meta_check",
+		cmd_meta_check,
+		NVM_CLI_ARG_DEV_PATH,
+		NVM_CLI_OPT_DEFAULT | NVM_CLI_OPT_STATUS | NVM_CLI_OPT_BRIEF
+	},
+
 };
 
 /* Define the CLI */
