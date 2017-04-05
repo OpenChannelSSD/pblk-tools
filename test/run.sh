@@ -85,7 +85,7 @@ do
 	FILE_PATH="$FS_PATH/$FILE.rnd"
 	if [ ! -e $FILE_PATH ] || [ "$FILES_OVERWRITE" -eq 1 ]; then
 		echo "# Writing $FILE_PATH"
-		DD_OUT=$(dd if=/dev/urandom of=$FILE_PATH bs=1M count=$FILE)
+		DD_OUT=$(dd if=/dev/zero of=$FILE_PATH bs=1M count=$FILE)
 		if [ "$?" -ne 0 ]; then
 			echo "# FAILED: dd .. $FILE_PATH"
 		fi
@@ -95,6 +95,6 @@ done
 sync
 
 echo "# Reading meta to $MD_PATH"
-nvm_pblk mdck $DEV_PATH 2>&1 | tee $MD_PATH
+nvm_pblk meta_dump $DEV_PATH 2>&1 | tee $MD_PATH
 
 echo "# meta is available at $MD_PATH"
