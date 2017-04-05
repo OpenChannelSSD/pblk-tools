@@ -251,10 +251,8 @@ int line_smeta_addr_calc(struct line *line, struct nvm_dev *dev,
 		for (size_t blk = blk_off; blk < blk_lim; ++blk)
 			broken |= bbt->blks[blk];
 
-		if (broken) {
-			nvm_cli_info_pr("{broken: %d, tlun: %d}\n", broken, tlun);
+		if (broken)
 			continue;
-		}
 
 		line->smeta_addr.ppa = 0;
 		line->smeta_addr.g.blk = line->id;
@@ -430,6 +428,23 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 		if (!nvm_addr_read(dev, &line->emeta_addr, 1, emeta_buf, NULL,
 				   0x0, &line->emeta_ret))
 			line_emeta_from_buf(emeta_buf, &line->emeta);
+	}
+
+	// Update line-state
+	for (size_t i = 0; i < nlines; ++i) {
+		struct line *line = &lines[i];
+		const int smeta_read = !(line->smeta_ret.status || line->smeta_ret.result);
+		const int emeta_read = !(line->emeta_ret.status || line->emeta_ret.result);
+
+		if (line->state == PBLK_LINE_STATE_BAD)
+			continue;
+
+		// TODO: Expand the state classification
+		if (smeta_read && emeta_read) {
+			line->state = PBLK_LINE_STATE_CLOSED;
+		} else if (smeta_read && (!emeta_read)) {
+			line->state = PBLK_LINE_STATE_OPEN;
+		}
 	}
 
 scan_exit:
