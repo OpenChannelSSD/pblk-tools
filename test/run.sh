@@ -19,8 +19,8 @@ fi
 
 source pblk_test.sh
 
-MD_NAME="${DEV_NAME}.meta"
-MD_PATH="/tmp/$MD_NAME"
+MD_INSTANCES_PATH="/tmp/${DEV_NAME}_instances.meta"
+MD_LINES_PATH="/tmp/${DEV_NAME}_lines.meta"
 
 case $TEST in
 0)
@@ -47,7 +47,10 @@ case $TEST in
   ;;
 esac
 
-echo "# Reading meta to $MD_PATH"
-nvm_pblk meta_dump $DEV_PATH 2>&1 | tee $MD_PATH
+echo "# Reading instances to $MD_INSTANCES_PATH"
+nvm_pblk instances $DEV_PATH 2>&1 | tee $MD_INSTANCES_PATH
+echo "# meta is available at $MD_INSTANCES_PATH"
 
-echo "# meta is available at $MD_PATH"
+echo "# Reading lines to $MD_LINES_PATH"
+nvm_pblk lines $DEV_PATH -b 2>&1 | tee $MD_LINES_PATH
+echo "# meta is available at $MD_LINES_PATH"
