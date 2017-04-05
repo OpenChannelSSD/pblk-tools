@@ -223,8 +223,10 @@ int line_smeta_addr_calc(struct line *line, struct nvm_dev *dev,
 		for (size_t blk = blk_off; blk < blk_lim; ++blk)
 			broken |= bbt->blks[blk];
 
-		if (broken)
+		if (broken) {
+			nvm_cli_info_pr("{broken: %d, tlun: %d}\n", broken, tlun);
 			continue;
+		}
 
 		line->smeta_addr.ppa = 0;
 		line->smeta_addr.g.blk = line->id;
@@ -311,7 +313,7 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 		goto scan_exit;
 	}
 
-	// Allocate smeta read buffer
+	// Allocate emeta read buffer
 	emeta_buf = nvm_buf_alloc(geo, emeta_buf_len);
 	if (!emeta_buf) {
 		errno = ENOMEM;
@@ -338,7 +340,7 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 
 		bbts[tlun] = nvm_bbt_get(dev, lun_addr, &ret);
 		if (!bbts[tlun]) {
-			// Propagate errno from nvm_bbt_get
+			// errno: propagate from nvm_bbt_get
 			err = -1;
 			goto scan_exit;
 		}
