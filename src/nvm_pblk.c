@@ -58,10 +58,10 @@ struct line_emeta {
 };
 
 enum line_state {
-	PBLK_LINE_STATE_UNKNOWN,
-	PBLK_LINE_STATE_OPEN,
-	PBLK_LINE_STATE_CLOSED,
-	PBLK_LINE_STATE_BAD,
+	PBLK_LINE_STATE_UNKNOWN = 0x0,
+	PBLK_LINE_STATE_OPEN = 0x1,
+	PBLK_LINE_STATE_CLOSED = 0x1 << 2,
+	PBLK_LINE_STATE_BAD = 0x1 << 3,
 };
 
 const char *line_state_str(int lstate)
@@ -177,6 +177,9 @@ void line_pr(const struct line *line)
 	printf("line_%04d:\n", line->id);
 	printf("  id: %04d:\n", line->id);
 	printf("  state: %s\n", line_state_str(line->state));
+	if (line->state == PBLK_LINE_STATE_BAD)
+		return;
+
 	printf("  smeta_"); nvm_addr_pr(line->smeta_addr);
 	printf("  emeta_"); nvm_addr_pr(line->emeta_addr);
 
