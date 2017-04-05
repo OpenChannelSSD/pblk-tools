@@ -93,6 +93,28 @@ struct line {
 	struct nvm_ret emeta_ret;
 };
 
+struct pblk_instance {
+	int lun_bgn;
+	int lun_end;
+	int tluns;
+};
+
+void pblk_instance_pr(const struct pblk_instance *pblk)
+{
+	if (!pblk) {
+		printf("pblk_instance: ~\n");
+		return;
+	}
+
+	printf("pblk_instance:\n");
+	printf("  lun_bgn: %d\n", pblk->lun_bgn);
+	printf("  lun_end: %d\n", pblk->lun_end);
+	printf("  tluns: %d\n", pblk->tluns);
+}
+
+/**
+ * Compute CRC of the given line_header
+ */
 static inline uint32_t line_header_crc(struct line_header *hdr)
 {
 	return crc32(0, ((unsigned char *)hdr) + sizeof(hdr->crc),
@@ -100,6 +122,9 @@ static inline uint32_t line_header_crc(struct line_header *hdr)
 	) ^ (~(uint32_t)0);
 }
 
+/**
+ * Compute CRC of the given smeta
+ */
 static inline uint32_t line_smeta_crc(struct line_smeta *smeta, size_t len)
 {
 	return crc32(0, ((unsigned char *)smeta) +
@@ -109,6 +134,9 @@ static inline uint32_t line_smeta_crc(struct line_smeta *smeta, size_t len)
 	) ^ (~(uint32_t)0);
 }
 
+/**
+ * Compute CRC of the given emeta
+ */
 static inline uint32_t line_emeta_crc(struct line_emeta *emeta, size_t len)
 {
 	return crc32(0, ((unsigned char *)emeta) +
@@ -117,7 +145,6 @@ static inline uint32_t line_emeta_crc(struct line_emeta *emeta, size_t len)
 			sizeof(emeta->header) - sizeof(emeta->crc)
 	) ^ (~(uint32_t)0);
 }
-
 
 void line_header_pr(const struct line_header *header)
 {
@@ -276,7 +303,6 @@ int line_emeta_addr_calc(struct line *line, struct nvm_dev *dev,
 	const struct nvm_geo *geo = nvm_dev_get_geo(dev);
 	const int tluns = geo->nchannels * geo->nluns;
 
-	//for (int tlun = tluns - 1; tlun >= 0; --tlun) {
 	for (int tlun = 0; tlun < tluns; ++tlun) {
 		const struct nvm_bbt *bbt = bbts[tlun];
 		const size_t blk_off = line->id * geo->nplanes;
@@ -302,7 +328,117 @@ int line_emeta_addr_calc(struct line *line, struct nvm_dev *dev,
 }
 
 /**
- * Scan the given device lun range for meta-data
+ * Check whether the given smeta has a valid header
+ *
+ * @returns 0 When valid, some value otherwise
+ */
+int line_smeta_first_hdr_check(struct line_smeta *smeta)
+{
+	uint32_t crc = line_header_crc(&smeta->header);
+
+	if (smeta->header.identifier != PBLK_META_IDENT)
+		return -1;
+
+	if (smeta->header.version != PBLK_META_VER)
+		return -1;
+
+	if (smeta->header.id != 0)
+		return -1;
+
+	if (smeta->header.crc != crc)
+		return -1;
+
+	if (smeta->prev_id != ~(uint32_t)0)
+		return -1;
+
+	if (smeta->seq_nr != 0)
+		return -1;
+
+	return 0;
+}
+
+/**
+ * Scan for pblk instances
+ *
+ * NOTE: This does not take bbt info into account
+ */
+struct pblk_instance *pblk_instances_scan(struct nvm_dev *dev)
+{
+	int err = 0;
+
+	const struct nvm_geo *geo = nvm_dev_get_geo(dev);
+	struct pblk_instance *instances = NULL;
+	int ninstances = 0;
+
+	const size_t tluns = geo->nchannels * geo->nluns;
+
+	struct line_smeta smeta = { 0 };
+	char *smeta_buf = NULL;
+	struct nvm_ret smeta_ret = { 0 };
+	size_t smeta_buf_len = geo->sector_nbytes;
+
+	// Allocate smeta read buffer
+	smeta_buf = nvm_buf_alloc(geo, smeta_buf_len);
+	if (!smeta_buf) {
+		errno = ENOMEM;
+		err = -1;
+		goto scan_exit;
+	}
+
+	// Allocate instances
+	instances = malloc(sizeof(*instances) * tluns);
+	if (!instances) {
+		errno = ENOMEM;
+		err = -1;
+	}
+	memset(instances, 0, sizeof(*instances) * tluns);
+
+	// TODO: This should account for bbt-info but it will only fail if all
+	// LUNs on the channel have died, due to the non-channel-sharing
+	// assumption of pblk-instances
+	for (size_t tlun = 0; tlun < tluns; ++tlun) {
+		struct pblk_instance *inst = &instances[ninstances];
+		struct nvm_ret ret = { 0 };
+		struct nvm_addr lun_addr = { 0 };
+
+		lun_addr.g.lun = tlun % geo->nluns;
+		lun_addr.g.ch = (tlun / geo->nluns) % geo->nchannels;
+
+		memset(smeta_buf, 0 , smeta_buf_len);
+		if (nvm_addr_read(dev, &lun_addr, 1, smeta_buf, NULL,
+				   0x0, &smeta_ret))
+			continue;
+
+		line_smeta_from_buf(smeta_buf, &smeta);
+		if (line_smeta_first_hdr_check(&smeta))
+			continue;
+
+		inst->tluns = smeta.window_wr_lun;
+
+		// NOTE: Assuming non-shared channels
+		inst->lun_bgn = (lun_addr.g.ch * geo->nluns);
+		inst->lun_end = inst->lun_bgn + inst->tluns - 1;
+
+		++ninstances;
+	}
+
+	// Print instances
+	for (int i = 0; i < ninstances; ++i) {
+		pblk_instance_pr(&instances[i]);
+	}
+
+scan_exit:
+	free(smeta_buf);
+	if (err) {
+		free(instances);
+		instances = NULL;
+	}
+
+	return instances;
+}
+
+/**
+ * Scan for line meta of the given pbkl instance
  *
  * @param dev Device handle obtained with `nvm_dev_open`
  * @param lun_bgn First lun in flattened range
@@ -311,13 +447,13 @@ int line_emeta_addr_calc(struct line *line, struct nvm_dev *dev,
  * @returns On success, a pointer to array of 'struct line'. On error, NULL is
  * returned and errno set to indicate the error.
  */
-struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
+struct line *pblk_lines_scan(struct nvm_cli *cli, struct pblk_instance *pblk)
 {
 	int err = 0;
 	struct line *lines = NULL;
 	struct nvm_dev *dev = cli->args.dev;
 	const struct nvm_geo *geo = cli->args.geo;
-	const size_t tluns = (lun_end - lun_bgn) + 1;
+	const size_t tluns = (pblk->lun_end - pblk->lun_bgn) + 1;
 	const size_t nlines = geo->nblocks;
 	const struct nvm_bbt **bbts = NULL;
 	char *smeta_buf = NULL;
@@ -325,7 +461,7 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 	size_t smeta_buf_len;
 	size_t emeta_buf_len;
 
-	if (lun_bgn > lun_end) {
+	if (pblk->lun_bgn > pblk->lun_end) {
 		errno = EINVAL;
 		return NULL;
 	}
@@ -473,6 +609,7 @@ int line_check_shallow(struct line *line)
 {
 	const int hdr_sz = sizeof(struct line_header);
 
+	// TODO: Different cases dependent on line state
 	// TODO: CRC-check smeta header
 
 	// Compare headers
@@ -491,15 +628,23 @@ int line_check_shallow(struct line *line)
 		(line->smeta.seq_nr != line->emeta.seq_nr);
 }
 
+// NOTE: Assumes a single pblk-instance spanning the entire device geometry
 int cmd_meta_dump(struct nvm_cli *cli)
 {
+	int err = 0;
 	const struct nvm_geo *geo = cli->args.geo;
 	const size_t nlines = geo->nblocks;
 	struct line *lines = NULL;
 
-	lines = pblk_meta_scan(cli, 0, (geo->nchannels * geo->nluns) - 1);
+	struct pblk_instance pblk = { 0 };
+
+	pblk.lun_bgn = 0;			// pblk instance
+	pblk.lun_end = (geo->nchannels * geo->nluns) - 1;
+
+	lines = pblk_lines_scan(cli, &pblk);	// Scan for lines
 	if (!lines) {
-		return 1;
+		err = 1;
+		goto dump_exit;
 	}
 
 	for (size_t i = 0; i < nlines; ++i) {	// Dump them stdout
@@ -509,26 +654,25 @@ int cmd_meta_dump(struct nvm_cli *cli)
 		line_pr(line);
 	}
 
+dump_exit:
 	free(lines);
 
-	return 0;
+	return err;
 }
 
 int cmd_meta_check(struct nvm_cli *cli)
 {
-	struct line_smeta smeta = { 0 };
+	int err = 0;
+	struct pblk_instance *instances = NULL;
 
-	smeta.header.crc = 0x42862eb8;
-	smeta.header.identifier = 0x70626c6b;
-	smeta.header.type = PBLK_LINETYPE_DATA;
-	smeta.header.version = 0x1;
-	smeta.header.id = 16;
+	instances = pblk_instances_scan(cli->args.dev);
+	if (!instances) {
+		err = 1;
+		goto check_exit;
+	}
 
-	line_smeta_pr(&smeta);
-
-	smeta.header.crc = line_header_crc(&smeta.header);
-
-	line_smeta_pr(&smeta);
+check_exit:
+	free(instances);
 
 	return 0;
 }
