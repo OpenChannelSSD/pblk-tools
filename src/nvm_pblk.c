@@ -385,9 +385,9 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 			nvm_cli_status_pr("emeta_read", i, nlines);
 
 		memset(emeta_buf, 0 , emeta_buf_len);
-		if (!nvm_addr_read(dev, &line->emeta_addr, 1, smeta_buf, NULL,
+		if (!nvm_addr_read(dev, &line->emeta_addr, 1, emeta_buf, NULL,
 				   0x0, &line->emeta_ret))
-			line_emeta_from_buf(smeta_buf, &line->emeta);
+			line_emeta_from_buf(emeta_buf, &line->emeta);
 	}
 
 scan_exit:
