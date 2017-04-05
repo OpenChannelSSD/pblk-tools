@@ -24,7 +24,7 @@ const char *line_type_str(int ltype)
 	case PBLK_LINETYPE_DATA:
 		return "PBLK_LINETYPE_DATA";
 	default:
-		return "PBLK_LINETYPE_INVALID";
+		return "PBLK_LINETYPE_UNDEF";
 	}
 }
 
@@ -57,8 +57,32 @@ struct line_emeta {
 	uint64_t lbas[];
 };
 
+enum line_state {
+	PBLK_LINE_STATE_UNKNOWN,
+	PBLK_LINE_STATE_OPEN,
+	PBLK_LINE_STATE_CLOSED,
+	PBLK_LINE_STATE_BAD,
+};
+
+const char *line_state_str(int lstate)
+{
+	switch (lstate) {
+	case PBLK_LINE_STATE_OPEN:
+		return "PBLK_LINE_STATE_OPEN";
+	case PBLK_LINE_STATE_CLOSED:
+		return "PBLK_LINE_STATE_CLOSED";
+	case PBLK_LINE_STATE_BAD:
+		return "PBLK_LINE_STATE_BAD";
+	case PBLK_LINE_STATE_UNKNOWN:
+		return "PBLK_LINE_STATE_UNKNOWN";
+	default:
+		return "PBLK_LINE_STATE_UNDEF";
+	}
+}
+
 struct line {
 	int id;
+	enum line_state state;
 
 	struct line_smeta smeta;
 	struct nvm_addr smeta_addr;
@@ -152,6 +176,7 @@ void line_pr(const struct line *line)
 
 	printf("line_%04d:\n", line->id);
 	printf("  id: %04d:\n", line->id);
+	printf("  state: %s\n", line_state_str(line->state));
 	printf("  smeta_"); nvm_addr_pr(line->smeta_addr);
 	printf("  emeta_"); nvm_addr_pr(line->emeta_addr);
 
@@ -206,6 +231,9 @@ int line_emeta_from_buf(char *buf, struct line_emeta *emeta)
 /**
  * Compute and update the smeta-address for the given line given on the given
  * device
+ *
+ * @returns On success, 0 is returned. On error, -1 is returned, `err` set to
+ * indicate the error. Error occurs if all blocks in the line are bad.
  */
 int line_smeta_addr_calc(struct line *line, struct nvm_dev *dev,
 			 const struct nvm_bbt **bbts)
@@ -355,7 +383,7 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 	}
 	memset(lines, 0, nlines * sizeof(*lines));
 
-	// Fill lines with id and addresses
+	// Fill lines with: id, state [and addresses]
 	for (size_t i = 0; i < nlines; ++i) {
 		struct line *line = &lines[i];
 
@@ -363,23 +391,21 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 			nvm_cli_status_pr("line_setup", i, nlines);
 
 		line->id = i;
+		line->state = PBLK_LINE_STATE_UNKNOWN;
 
-		err = line_smeta_addr_calc(line, dev, bbts);
-		if (err) {
-			errno = EIO;
-			goto scan_exit;
-		}
+		if (line_smeta_addr_calc(line, dev, bbts))
+			line->state = PBLK_LINE_STATE_BAD;
 
-		err = line_emeta_addr_calc(line, dev, bbts);
-		if (err) {
-			errno = EIO;
-			goto scan_exit;
-		}
+		if (line_emeta_addr_calc(line, dev, bbts))
+			line->state = PBLK_LINE_STATE_BAD;
 	}
 
 	// Fill lines with smeta or read-err
 	for (size_t i = 0; i < nlines; ++i) {
 		struct line *line = &lines[i];
+
+		if (line->state == PBLK_LINE_STATE_BAD)
+			continue;
 
 		if (cli->opts.status)
 			nvm_cli_status_pr("smeta_read", i, nlines);
@@ -393,6 +419,9 @@ struct line *pblk_meta_scan(struct nvm_cli *cli, int lun_bgn, int lun_end)
 	// Fill lines with emeta or read-err
 	for (size_t i = 0; i < nlines; ++i) {
 		struct line *line = &lines[i];
+
+		if (line->state == PBLK_LINE_STATE_BAD)
+			continue;
 
 		if (cli->opts.status)
 			nvm_cli_status_pr("emeta_read", i, nlines);
