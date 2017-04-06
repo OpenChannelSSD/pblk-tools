@@ -624,11 +624,53 @@ int check_assumptions(struct nvm_cli *cli)
 
 int cmd_meta_check(struct nvm_cli *cli)
 {
-	int err = 0;
+	int res = 0;
+	struct pblk *pblk = NULL;
+	
+	nvm_cli_info_pr("Initializing pblk -- fetching bbt etc.");
+	pblk = pblk_init(cli->args.dev, 0x0);
 
-	nvm_cli_info_pr("Not implemented");
+	nvm_cli_info_pr("Scanning device for pblk instances");
+	if (pblk_init_instances(pblk, 0x0)) {
+		nvm_cli_info_pr("Scanning failed");
+		res = 1;
+		goto cmd_exit;
+	}
+	nvm_cli_info_pr("Found %d instances", pblk->ninsts);
 
-	return err;
+	nvm_cli_info_pr("Scanning device for pblk instance line-meta");
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+
+		if (pblk_init_instance_lines(pblk, inst))
+			nvm_cli_info_pr("Failed for instance %d", i);
+	}
+
+	nvm_cli_info_pr("Checking meta data for %d instances", pblk->ninsts);
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+	
+		nvm_cli_info_pr("Checking instance %d", i);
+		pblk_instance_pr(&pblk->insts[i]);
+
+		uint32_t prev_id = ~(uint32_t)0;
+
+		for (size_t j = 0; j < inst->nlines; ++j) {
+			struct pblk_line *line = &inst->lines[j];
+
+			switch (line->state) {
+			case PBLK_LINE_STATE_OPEN:
+				nvm_cli_info_pr("hazard: found an open line");
+				nvm_line_pr(line);
+				break;
+			}
+		}
+	}
+
+cmd_exit:
+	free(pblk);
+	return res;
+
 }
 
 int cmd_lines(struct nvm_cli *cli)
