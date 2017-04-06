@@ -496,20 +496,28 @@ scan_exit:
 	return err;
 }
 
-int pblk_init_instance(struct pblk_inst *inst, struct nvm_addr iaddr, int nluns,
+int pblk_init_instance(struct pblk_inst *inst, int lun_bgn, int lun_end,
 		       struct pblk *pblk)
 {
 	const struct nvm_geo *geo = nvm_dev_get_geo(pblk->dev);
+	struct nvm_addr iaddr = { 0 };
 
-	inst->nluns = nluns;
-	inst->lun_bgn = iaddr.g.ch * geo->nluns;
-	inst->lun_end = inst->lun_bgn + inst->nluns;
+	iaddr.g.ch = lun_bgn / geo->nluns;
 
-	size_t nchannels = nluns / geo->nluns;
+	inst->nluns = (lun_end - lun_bgn) + 1;
+	inst->lun_bgn = lun_bgn;
+	inst->lun_end = lun_end;
+
+	size_t vnchannels = inst->nluns / geo->nluns;
+
+	if (!vnchannels) {
+		errno = EINVAL;
+		return -1;
+	}
 
 	for (int vlun = 0; vlun < inst->nluns; ++vlun) {
-		size_t ch = vlun % nchannels;
-		size_t lun = (vlun / nchannels) % geo->nluns;
+		size_t ch = vlun % vnchannels;
+		size_t lun = (vlun / vnchannels) % geo->nluns;
 
 		inst->luns[vlun] = iaddr;
 		inst->luns[vlun].g.ch += ch;
@@ -556,6 +564,7 @@ int pblk_init_instances(struct pblk *pblk, int flags)
 		struct nvm_ret ret = { 0 };
 		struct nvm_addr lun_addr = { 0 };
 		struct nvm_addr inst_addr = { 0 };
+		int lun_bgn, lun_end;
 
 		lun_addr.g.lun = tlun % geo->nluns;
 		lun_addr.g.ch = (tlun / geo->nluns) % geo->nchannels;
@@ -568,9 +577,10 @@ int pblk_init_instances(struct pblk *pblk, int flags)
 		if (pblk_line_smeta_hdrf_check(&smeta))
 			continue;
 
-		inst_addr.g.ch = lun_addr.g.ch;	// Assuming non-shared channels
-		if (pblk_init_instance(&pblk->insts[pblk->ninsts], inst_addr,
-				       smeta.window_wr_lun, pblk))
+		lun_bgn = (tlun / geo->nluns) * geo->nluns;
+		lun_end = (lun_bgn + smeta.window_wr_lun) - 1;
+		if (pblk_init_instance(&pblk->insts[pblk->ninsts], lun_bgn,
+				       lun_end, pblk))
 			continue;
 
 		++(pblk->ninsts);
@@ -622,12 +632,68 @@ int check_assumptions(struct nvm_cli *cli)
 	return 0;
 }
 
-int cmd_meta_check(struct nvm_cli *cli)
+int cmd_check_inst(struct nvm_cli *cli)
+{
+	int res = 0;
+	struct pblk *pblk = NULL;
+
+	int lun_bgn, lun_end;
+	
+	nvm_cli_info_pr("Initializing pblk...");
+	pblk = pblk_init(cli->args.dev, 0x0);
+
+	lun_bgn = cli->args.dec_vals[0];
+	lun_end = cli->args.dec_vals[1];
+
+	nvm_cli_info_pr("Initializing instance (%d, %d)", lun_bgn, lun_end);
+	if (pblk_init_instance(&pblk->insts[0], lun_bgn, lun_end, pblk)) {
+		nvm_cli_perror("pblk_init_instance: failed");
+		goto cmd_exit;
+	}
+	++pblk->ninsts;
+
+	nvm_cli_info_pr("Scanning device for pblk instance line-meta");
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+
+		if (pblk_init_instance_lines(pblk, inst))
+			nvm_cli_info_pr("Failed for instance %d", i);
+	}
+
+	nvm_cli_info_pr("Checking meta data for %d instances", pblk->ninsts);
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+	
+		nvm_cli_info_pr("Checking instance %d", i);
+		pblk_instance_pr(&pblk->insts[i]);
+
+		uint32_t prev_id = ~(uint32_t)0;
+
+		for (size_t j = 0; j < inst->nlines; ++j) {
+			struct pblk_line *line = &inst->lines[j];
+
+			switch (line->state) {
+			case PBLK_LINE_STATE_OPEN:
+				printf("#\n");
+				nvm_cli_info_pr("HAZARD: found an open line");
+				pblk_line_pr(line);
+				break;
+			}
+		}
+	}
+
+cmd_exit:
+	free(pblk);
+	return res;
+
+}
+
+int cmd_check_all(struct nvm_cli *cli)
 {
 	int res = 0;
 	struct pblk *pblk = NULL;
 	
-	nvm_cli_info_pr("Initializing pblk -- fetching bbt etc.");
+	nvm_cli_info_pr("Initializing pblk...");
 	pblk = pblk_init(cli->args.dev, 0x0);
 
 	nvm_cli_info_pr("Scanning device for pblk instances");
@@ -660,8 +726,9 @@ int cmd_meta_check(struct nvm_cli *cli)
 
 			switch (line->state) {
 			case PBLK_LINE_STATE_OPEN:
-				nvm_cli_info_pr("hazard: found an open line");
-				nvm_line_pr(line);
+				printf("#\n");
+				nvm_cli_info_pr("HAZARD: found an open line");
+				pblk_line_pr(line);
 				break;
 			}
 		}
@@ -673,12 +740,64 @@ cmd_exit:
 
 }
 
-int cmd_lines(struct nvm_cli *cli)
+int cmd_lines_inst(struct nvm_cli *cli)
+{
+	int res = 0;
+	struct pblk *pblk = NULL;
+
+	int lun_bgn, lun_end;
+	
+	nvm_cli_info_pr("Initializing pblk...");
+	pblk = pblk_init(cli->args.dev, 0x0);
+
+	lun_bgn = cli->args.dec_vals[0];
+	lun_end = cli->args.dec_vals[1];
+
+	nvm_cli_info_pr("Initializing instance (%d, %d)", lun_bgn, lun_end);
+	if (pblk_init_instance(&pblk->insts[0], lun_bgn, lun_end, pblk)) {
+		nvm_cli_perror("pblk_init_instance: failed");
+		goto cmd_exit;
+	}
+	++pblk->ninsts;
+
+	nvm_cli_info_pr("Scanning device for pblk instance line-meta");
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+
+		if (pblk_init_instance_lines(pblk, inst))
+			nvm_cli_info_pr("Failed for instance %d", i);
+	}
+
+	nvm_cli_info_pr("Dumping meta for %d instances", pblk->ninsts);
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+	
+		nvm_cli_info_pr("Meta for instance %d", i);
+		pblk_instance_pr(&pblk->insts[i]);
+
+		for (size_t j = 0; j < inst->nlines; ++j) {
+			struct pblk_line *line = &inst->lines[j];
+
+			if (cli->opts.brief &&
+					line->state == PBLK_LINE_STATE_UNKNOWN)
+				continue;
+
+			printf("\n");
+			pblk_line_pr(line);
+		}
+	}
+
+cmd_exit:
+	free(pblk);
+	return res;
+}
+
+int cmd_lines_all(struct nvm_cli *cli)
 {
 	int res = 0;
 	struct pblk *pblk = NULL;
 	
-	nvm_cli_info_pr("Initializing pblk -- fetching bbt etc.");
+	nvm_cli_info_pr("Initializing pblk...");
 	pblk = pblk_init(cli->args.dev, 0x0);
 
 	nvm_cli_info_pr("Scanning device for pblk instances");
@@ -726,7 +845,7 @@ int cmd_instances(struct nvm_cli *cli)
 	int res = 0;
 	struct pblk *pblk = NULL;
 	
-	nvm_cli_info_pr("Initializing pblk -- fetching bbt etc.");
+	nvm_cli_info_pr("Initializing pblk...");
 	pblk = pblk_init(cli->args.dev, 0x0);
 
 	nvm_cli_info_pr("Scanning device for pblk instances");
@@ -752,15 +871,27 @@ cmd_exit:
 /* Define commands */
 static struct nvm_cli_cmd cmds[] = {
 	{
-		"check",
-		cmd_meta_check,
+		"check_all",
+		cmd_check_all,
 		NVM_CLI_ARG_DEV_PATH,
 		NVM_CLI_OPT_HELP
 	},
 	{
-		"lines",
-		cmd_lines,
+		"check_inst",
+		cmd_check_inst,
+		NVM_CLI_ARG_DECVAL_BEGIN_END,
+		NVM_CLI_OPT_HELP
+	},
+	{
+		"lines_all",
+		cmd_lines_all,
 		NVM_CLI_ARG_DEV_PATH,
+		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
+	},
+	{
+		"lines_inst",
+		cmd_lines_inst,
+		NVM_CLI_ARG_DECVAL_BEGIN_END,
 		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
 	},
 	{	"instances",

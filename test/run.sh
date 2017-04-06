@@ -52,5 +52,5 @@ nvm_pblk instances $DEV_PATH 2>&1 | tee $MD_INSTANCES_PATH
 echo "# meta is available at $MD_INSTANCES_PATH"
 
 echo "# Reading lines to $MD_LINES_PATH"
-nvm_pblk lines $DEV_PATH -b 2>&1 | tee $MD_LINES_PATH
+nvm_pblk lines_inst $DEV_PATH 0 7 -b 2>&1 | tee $MD_LINES_PATH
 echo "# meta is available at $MD_LINES_PATH"
