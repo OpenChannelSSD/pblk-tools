@@ -96,5 +96,20 @@ done
 
 sync
 
+UMOUNT_OUT=$(umount $FS_PATH)
+if [ "$?" -ne 0 ]; then
+	echo "# FAILED: unmounting"
+fi
+
+RM_OUT=$(nvme lnvm remove -n $PBLK_NAME)
+if [ "$?" -ne 0 ]; then
+	echo "# FAILED: removing instance"
+fi
+
+RMDIR_OUT=$(rmdir $FS_PATH)
+if [ "$?" -ne 0 ]; then
+	echo "# FAILED: removing mountpoint"
+fi
+
 }
 
