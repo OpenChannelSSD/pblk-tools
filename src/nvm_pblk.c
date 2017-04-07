@@ -871,27 +871,27 @@ cmd_exit:
 /* Define commands */
 static struct nvm_cli_cmd cmds[] = {
 	{
-		"check_all",
-		cmd_check_all,
-		NVM_CLI_ARG_DEV_PATH,
-		NVM_CLI_OPT_HELP
-	},
-	{
 		"check_inst",
 		cmd_check_inst,
 		NVM_CLI_ARG_DECVAL_BEGIN_END,
 		NVM_CLI_OPT_HELP
 	},
 	{
-		"lines_all",
-		cmd_lines_all,
+		"check_all",
+		cmd_check_all,
 		NVM_CLI_ARG_DEV_PATH,
-		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
+		NVM_CLI_OPT_HELP
 	},
 	{
 		"lines_inst",
 		cmd_lines_inst,
 		NVM_CLI_ARG_DECVAL_BEGIN_END,
+		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
+	},
+	{
+		"lines_all",
+		cmd_lines_all,
+		NVM_CLI_ARG_DEV_PATH,
 		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
 	},
 	{	"instances",
