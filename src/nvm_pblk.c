@@ -864,6 +864,53 @@ cmd_exit:
 	return res;
 }
 
+/**
+ * Erase the first block on all LUNs
+ */
+int cmd_wipe(struct nvm_cli *cli)
+{
+	int res = 0;
+	struct pblk *pblk = NULL;
+	struct nvm_dev *dev = cli->args.dev;
+	const struct nvm_geo *geo = nvm_dev_get_geo(dev);
+	
+	pblk = pblk_init(dev, 0x0);
+
+	nvm_cli_info_pr("wiping: begin");
+	for (size_t lun = 0; lun < pblk->tluns; ++lun) {
+		ssize_t err = 0;
+		struct nvm_vblk *vblk = NULL;
+		struct nvm_ret ret = { 0 };
+		struct nvm_addr addr = { 0 };
+
+		addr.g.lun = lun % geo->nluns;
+		addr.g.ch = (lun / geo->nluns) % geo->nchannels;
+
+		vblk = nvm_vblk_alloc(dev, &addr, 1);
+		if (!vblk) {
+			nvm_cli_perror("nvm_vblk_alloc");
+			continue;
+		}
+
+		if (!cli->opts.brief) {
+			nvm_cli_info_pr("erasing %lu/%lu", lun, pblk->tluns);
+			nvm_vblk_pr(vblk);
+		}
+
+		err = nvm_vblk_erase(vblk);
+		if ((err < 0) && (!cli->opts.brief)) {
+			nvm_cli_perror("nvm_vblk_erase: probably a bad block");
+		}
+
+		nvm_vblk_free(vblk);
+	}
+	nvm_cli_info_pr("wiping: end");
+
+cmd_exit:
+	free(pblk);
+	return res;
+}
+
 //
 // Remaining code is CLI boiler-plate
 //
@@ -899,6 +946,12 @@ static struct nvm_cli_cmd cmds[] = {
 		NVM_CLI_ARG_DEV_PATH,
 		NVM_CLI_OPT_HELP
 	},
+	{	"wipe",
+		cmd_wipe,
+		NVM_CLI_ARG_DEV_PATH,
+		NVM_CLI_OPT_HELP | NVM_CLI_OPT_BRIEF
+	},
+
 };
 
 /* Define the CLI */
