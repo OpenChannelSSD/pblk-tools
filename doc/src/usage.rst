@@ -17,15 +17,14 @@ The instance ``pblkdev`` is removed by invoking:
 .. literalinclude:: usage_01.cmd
    :language: bash
 
-Conditioning (lnvm-tools)
-=========================
-
-...
-
 Verification (nvm_pblk)
 =======================
 
-...
+Imbalanced instance
+An instances has an unbalanced configuration of parallel units.
+
+Overlapping instance(s)
+One of more instances use the same parallel units.
 
 State and Debugging (sysfs)
 ===========================
