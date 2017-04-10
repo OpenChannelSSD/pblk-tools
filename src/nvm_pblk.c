@@ -688,13 +688,54 @@ cmd_exit:
 
 }
 
+void _check_imbalance(struct pblk *pblk)
+{
+	const struct nvm_geo *geo = nvm_dev_get_geo(pblk->dev);
+
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *inst = &pblk->insts[i];
+		int imbalance = 0;
+
+		if (inst->nluns % geo->nluns) {
+			imbalance = 1;
+			nvm_cli_info_pr("HAZARD: instance imbalance (nluns)");
+		}
+		if (inst->lun_bgn % geo->nluns) {
+			imbalance = 1;
+			nvm_cli_info_pr("HAZARD: instance imbalance (begin)");
+		}
+		if (imbalance)
+			pblk_instance_pr(inst);
+	}
+}
+
+void _check_overlap(struct pblk *pblk)
+{
+	for (int i = 0; i < pblk->ninsts; ++i) {
+		struct pblk_inst *one = &pblk->insts[i];
+		
+		for (int j = i + 1; j < pblk->ninsts; ++j) {
+			struct pblk_inst *other = &pblk->insts[j];
+
+			if (one->lun_bgn <= other->lun_end &&
+			    other->lun_bgn <= one->lun_end) {
+				nvm_cli_info_pr("HAZARD: instance overlap");
+				pblk_instance_pr(one);
+				pblk_instance_pr(other);
+			}
+		}
+	}
+}
+
 int cmd_check_all(struct nvm_cli *cli)
 {
 	int res = 0;
 	struct pblk *pblk = NULL;
+	struct nvm_dev *dev = cli->args.dev;
+	const struct nvm_geo *geo = nvm_dev_get_geo(dev);
 	
 	nvm_cli_info_pr("Initializing pblk...");
-	pblk = pblk_init(cli->args.dev, 0x0);
+	pblk = pblk_init(dev, 0x0);
 
 	nvm_cli_info_pr("Scanning device for pblk instances");
 	if (pblk_init_instances(pblk, 0x0)) {
@@ -703,6 +744,12 @@ int cmd_check_all(struct nvm_cli *cli)
 		goto cmd_exit;
 	}
 	nvm_cli_info_pr("Found %d instances", pblk->ninsts);
+
+	nvm_cli_info_pr("Checking instance(s) for imbalance...");
+	_check_imbalance(pblk);
+
+	nvm_cli_info_pr("Checking instance(s) for overlap...");
+	_check_overlap(pblk);
 
 	nvm_cli_info_pr("Scanning device for pblk instance line-meta");
 	for (int i = 0; i < pblk->ninsts; ++i) {
