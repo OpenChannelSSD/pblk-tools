@@ -13,8 +13,6 @@ A number of Open-Channel SSDs are available upon request. Public Open-Channel SS
  * EMC Dragon Fire Board Open-Channel OX Controller
  * Radian Memory Systems RMS325
 
-The CNEX Labs LightNVM SDK may be ordered for academical purposes. Please write to matias@cnexlabs.com with your research description and inquire for availability.
-
 Virtual
 -------
 
