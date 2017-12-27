@@ -1,0 +1,537 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Usage &mdash; pblk 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="pblk 0.0.1 documentation" href="index.html"/>
+        <link rel="next" title="References" href="refs.html"/>
+        <link rel="prev" title="Tools" href="tools.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> pblk
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="ocssd.html">Open-Channel SSD</a></li>
+<li class="toctree-l1"><a class="reference internal" href="os.html">Operating System Support</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tools.html">Tools</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#bring-up-teardown">Bring Up / Teardown</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#verification-nvm-pblk">Verification (nvm_pblk)</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#state-and-debugging-sysfs">State and Debugging (sysfs)</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#read-files">Read Files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#rate-limiter">rate_limiter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#write-buffer">write_buffer</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lines">lines</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#lines-info">lines_info</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#ppa-format">ppa_format</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#errors">errors</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#write-luns">write_luns</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#gc-state">gc_state</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#debug-read-files">Debug Read Files</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#stats">stats</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#write-buffer-vb">write_buffer_vb</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#control-knobs">Control Knobs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#gc-force">gc_force</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#debug-knobs">Debug Knobs</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#l2p-map">l2p_map</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#l2p-sanity">l2p_sanity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#line-metadata">line_metadata</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#line-bb">line_bb</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="refs.html">References</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">pblk</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Usage</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/usage.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="usage">
+<span id="sec-usage"></span><h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="bring-up-teardown">
+<h2>Bring Up / Teardown<a class="headerlink" href="#bring-up-teardown" title="Permalink to this headline">¶</a></h2>
+<p>Create a pblk instance named <code class="docutils literal"><span class="pre">pblkdev</span></code> using parallel units 0-127:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo nvme lnvm create -d /dev/nvme0n1 -n pblkdev -t pblk -b <span class="m">0</span> -e <span class="m">127</span>
+</pre></div>
+</div>
+<p>The instance <code class="docutils literal"><span class="pre">pblkdev</span></code> is removed by invoking:</p>
+<div class="highlight-bash"><div class="highlight"><pre><span></span>sudo nvme lnvm remove –n pblkdev
+</pre></div>
+</div>
+</div>
+<div class="section" id="verification-nvm-pblk">
+<h2>Verification (nvm_pblk)<a class="headerlink" href="#verification-nvm-pblk" title="Permalink to this headline">¶</a></h2>
+<p>Imbalanced instance
+An instances has an unbalanced configuration of parallel units.</p>
+<p>Overlapping instance(s)
+One of more instances use the same parallel units.</p>
+</div>
+<div class="section" id="state-and-debugging-sysfs">
+<h2>State and Debugging (sysfs)<a class="headerlink" href="#state-and-debugging-sysfs" title="Permalink to this headline">¶</a></h2>
+<p>Once the pblk instance is created and the block device available, a sysfs
+interface is exposed that allows further communication with the pblk instance.
+This interface can be found at /dev/block/$INSTANCE_NAME/pblk/. Some of the
+available files are always exposed to the user, while others that require
+collecting statistics on the FTL itself, require the debug mode activate.</p>
+<p>The following subsections describe each file and groups them by
+<a class="reference internal" href="#sec-usage-read-files"><span class="std std-ref">Read Files</span></a>, <a class="reference internal" href="#sec-usage-debug-read-files"><span class="std std-ref">Debug Read Files</span></a>
+<a class="reference internal" href="#sec-usage-control-knobs"><span class="std std-ref">Control Knobs</span></a>, and <a class="reference internal" href="#sec-usage-debug-knobs"><span class="std std-ref">Debug Knobs</span></a>.</p>
+<div class="section" id="read-files">
+<span id="sec-usage-read-files"></span><h3>Read Files<a class="headerlink" href="#read-files" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="rate-limiter">
+<h4>rate_limiter<a class="headerlink" href="#rate-limiter" title="Permalink to this headline">¶</a></h4>
+<p>Current state of the rate limiter in terms of the number of in-flight user and
+garbage-collection (GC) I/O.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">u</span><span class="p">:</span><span class="mi">53</span><span class="o">/</span><span class="mi">16384</span><span class="p">,</span><span class="n">gc</span><span class="p">:</span><span class="mi">0</span><span class="o">/</span><span class="mi">0</span><span class="o">/</span><span class="mi">0</span><span class="p">(</span><span class="mi">16384</span><span class="p">)(</span><span class="n">stop</span><span class="p">:</span><span class="o">&lt;</span><span class="mi">4096</span><span class="p">,</span><span class="n">full</span><span class="p">:</span><span class="o">&gt;</span><span class="mi">32768</span><span class="p">,</span><span class="n">free</span><span class="p">:</span><span class="mi">130921</span><span class="o">/</span><span class="mi">136320</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are 53 entries on the write buffer which contain user I/O data out of
+16384 total entries on the buffer. There are 0 entries being used for GC I/O
+out of 0 available. This means that GC is not running.</p>
+<p>This is because there are 130921 free blocks out of 136320 total blocks on the
+device, and GC does not run until the 32768 free block threshold is reached. At
+&lt;4096 free blocks, user I/O stops.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">All these parameters are configurable</p>
+</div>
+</div>
+<div class="section" id="write-buffer">
+<h4>write_buffer<a class="headerlink" href="#write-buffer" title="Permalink to this headline">¶</a></h4>
+<p>Current state of the write buffer.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>16384 53 16 16 64 0 4294967295 - 53/16383/0 – 0
+</pre></div>
+</div>
+<p>Total entries: 16384, mem:53, subm:16, sync:16, l2p_update:64, sync_point:0,
+number of entries being used:53, number of free entries:16330, entries to be
+flushed:0, entries queued on completion: 0.</p>
+</div>
+<div class="section" id="lines">
+<h4>lines<a class="headerlink" href="#lines" title="Permalink to this headline">¶</a></h4>
+<p>Lines lists as well as the metadata for the current data line.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">lines</span> <span class="n">GC</span><span class="p">:</span> <span class="n">full</span><span class="p">:</span><span class="mi">12</span><span class="p">,</span> <span class="n">high</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="n">mid</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="n">low</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span> <span class="n">empty</span><span class="p">:</span><span class="mi">2</span> <span class="n">data</span> <span class="p">(</span><span class="mi">21</span><span class="p">)</span> <span class="n">cur</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span>
+<span class="n">left</span><span class="p">:</span><span class="mi">523248</span><span class="o">/</span><span class="mi">523248</span><span class="p">,</span> <span class="n">vsc</span><span class="p">:</span><span class="mi">523248</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span><span class="mi">523248</span><span class="p">,</span> <span class="nb">map</span><span class="p">:</span><span class="mi">0</span><span class="o">/</span><span class="mi">524288</span> <span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>There are 12 lines with all sectors invalidated, 1 line with a high invalid
+sector count, 5 lines with a low sector count and 2 lines where all sectors are
+valid. The current data line is line 21. The write pointer is at sector 16 and
+there are 523248 sectors left out of 523248 (line is new).</p>
+<p>The valid sector count (vsc) and the number of sectors in line is also 523248.
+Since the line is empty, no sectors have been map (0/523248). Finally, the line
+is using the metadata line 0 (out of 2 available).</p>
+</div>
+<div class="section" id="lines-info">
+<h4>lines_info<a class="headerlink" href="#lines-info" title="Permalink to this headline">¶</a></h4>
+<p>General information about all data lines.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">smeta</span> <span class="o">-</span> <span class="nb">len</span><span class="p">:</span><span class="mi">65536</span><span class="p">,</span> <span class="n">secs</span><span class="p">:</span><span class="mi">16</span>
+<span class="n">emeta</span> <span class="o">-</span> <span class="nb">len</span><span class="p">:</span><span class="mi">4194304</span><span class="p">,</span> <span class="n">sec</span><span class="p">:</span><span class="mi">1024</span><span class="p">,</span> <span class="n">bb_start</span><span class="p">:</span><span class="mi">64</span>
+<span class="n">bitmap</span> <span class="n">lengths</span><span class="p">:</span> <span class="n">sec</span><span class="p">:</span><span class="mi">65536</span><span class="p">,</span> <span class="n">blk</span><span class="p">:</span><span class="mi">16</span><span class="p">,</span> <span class="n">lun</span><span class="p">:</span><span class="mi">16</span>
+<span class="n">blk_line</span><span class="p">:</span><span class="mi">128</span><span class="p">,</span> <span class="n">sec_line</span><span class="p">:</span><span class="mi">524288</span><span class="p">,</span> <span class="n">sec_blk</span><span class="p">:</span><span class="mi">4096</span>
+</pre></div>
+</div>
+<p>The metadata placed at the beginning of the line occupies 16 sectors (length
+65536 bytes). The metadata placed at the end of the line occupies 1024 sectors
+(length 4194304 bytes), and it spreads across 64 blocks. The bitmaps used for
+sectors are 65536 bytes long and for blocks and LUNs 16 bytes long. Each line
+is formed by 128 blocks. Each block has 4096 sectors, which translates into
+524288 sectors per line.</p>
+</div>
+<div class="section" id="ppa-format">
+<h4>ppa_format<a class="headerlink" href="#ppa-format" title="Permalink to this headline">¶</a></h4>
+<p>pblk ppa format and the ppa format for the device in terms of offset and
+length.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">g</span><span class="p">:</span><span class="n">blk</span><span class="p">:</span><span class="mi">19</span><span class="o">/</span><span class="mi">13</span><span class="p">,</span><span class="n">pg</span><span class="p">:</span><span class="mi">11</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span><span class="n">lun</span><span class="p">:</span><span class="mi">8</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="n">ch</span><span class="p">:</span><span class="mi">4</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span><span class="n">pl</span><span class="p">:</span><span class="mi">2</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">sec</span><span class="p">:</span><span class="mi">0</span><span class="o">/</span><span class="mi">2</span>
+<span class="n">d</span><span class="p">:</span><span class="n">blk</span><span class="p">:</span><span class="mi">19</span><span class="o">/</span><span class="mi">13</span><span class="p">,</span><span class="n">pg</span><span class="p">:</span><span class="mi">11</span><span class="o">/</span><span class="mi">8</span><span class="p">,</span><span class="n">lun</span><span class="p">:</span><span class="mi">8</span><span class="o">/</span><span class="mi">3</span><span class="p">,</span><span class="n">ch</span><span class="p">:</span><span class="mi">0</span><span class="o">/</span><span class="mi">4</span><span class="p">,</span><span class="n">pl</span><span class="p">:</span><span class="mi">6</span><span class="o">/</span><span class="mi">2</span><span class="p">,</span><span class="n">sec</span><span class="p">:</span><span class="mi">4</span><span class="o">/</span><span class="mi">2</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>pblk-format</dt>
+<dd>block (13 bits) – page (8 bits) – LUN (3 bits) – channel (4 bits) – plane (2 bits) – sector (2 bits)</dd>
+<dt>device-format</dt>
+<dd>block (13 bits) – page (8 bits) – LUN (3 bits) – plane (2 bits) – sector (2 bits) – channel (4 bits)</dd>
+</dl>
+</div>
+<div class="section" id="errors">
+<h4>errors<a class="headerlink" href="#errors" title="Permalink to this headline">¶</a></h4>
+<p>Accumulated counts of global errors that occurred since the pblk target was
+instantiated.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">read_failed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">read_high_ecc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">read_empty</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">read_failed_gc</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">write_failed</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">erase_failed</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="write-luns">
+<h4>write_luns<a class="headerlink" href="#write-luns" title="Permalink to this headline">¶</a></h4>
+<p>LUNs forming the pblk instance, its order and their state.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>pblk: pos:106, ch:10, lun:6 – 0
+</pre></div>
+</div>
+<p>The LUN in the position 106 corresponds to channel 10, LUN 6. The LUN is not
+busy.</p>
+</div>
+<div class="section" id="gc-state">
+<h4>gc_state<a class="headerlink" href="#gc-state" title="Permalink to this headline">¶</a></h4>
+<p>Shows the state of the GC thread.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">gc_enabled</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">gc_active</span><span class="o">=</span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>The GC thread is enabled but it is not active (no lines are being garbage
+collected).</p>
+</div>
+</div>
+<div class="section" id="debug-read-files">
+<span id="sec-usage-debug-read-files"></span><h3>Debug Read Files<a class="headerlink" href="#debug-read-files" title="Permalink to this headline">¶</a></h3>
+<p>The files described in this sections are only available when the kernel is
+compiled with <code class="docutils literal"><span class="pre">CONFIG_NVM_DEBUG</span></code>.</p>
+<div class="section" id="stats">
+<h4>stats<a class="headerlink" href="#stats" title="Permalink to this headline">¶</a></h4>
+<p>Detailed stats about the pblk instance.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="mi">0</span> <span class="mi">0</span> <span class="mi">1659328</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">1659328</span> <span class="mi">1659328</span> <span class="mi">1659328</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">0</span> <span class="mi">693</span>
+</pre></div>
+</div>
+<p>Inflight writes:0, inflight reads:0, write request:1659328, flush requests:0,
+padded sectors:0, submitted writes:1659328, synced writes:1659328, completed
+writes:1659328, inflight metadata I/Os:0, completed meta I/Os:0, recovery
+writes:0, GC writes:0, requeued writes:0, synced reads: 693</p>
+</div>
+<div class="section" id="write-buffer-vb">
+<h4>write_buffer_vb<a class="headerlink" href="#write-buffer-vb" title="Permalink to this headline">¶</a></h4>
+<p>Show state of each entry in the write buffer.</p>
+<p>Content example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">entry</span><span class="p">:</span><span class="mi">8161</span> <span class="o">-</span> <span class="n">flags</span><span class="p">:</span><span class="mi">512</span>
+</pre></div>
+</div>
+<p>Entry 8161 is a writable entry. The following flags can be present in the write
+buffer and encoded as:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># I/O Type</span>
+<span class="n">PBLK_IOTYPE_USER</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">PBLK_IOTYPE_GC</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="c1"># Buffer State</span>
+<span class="n">PBLK_FLUSH_ENTRY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">6</span> <span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+<span class="n">PBLK_WRITTEN_DATA</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">7</span> <span class="p">(</span><span class="mi">128</span><span class="p">)</span>
+<span class="n">PBLK_SUBMITTED_ENTRY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">8</span> <span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+<span class="n">PBLK_WRITABLE_ENTRY</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">9</span> <span class="p">(</span><span class="mi">512</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="control-knobs">
+<span id="sec-usage-control-knobs"></span><h3>Control Knobs<a class="headerlink" href="#control-knobs" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="gc-force">
+<h4>gc_force<a class="headerlink" href="#gc-force" title="Permalink to this headline">¶</a></h4>
+<p>Force the GC to run, independently of the number of free lines.</p>
+<p>Usage example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>echo “1” &gt; /sys/block/pblkdev/pblk/gc_force
+</pre></div>
+</div>
+<p>Forces garbage collection routine to run.</p>
+</div>
+</div>
+<div class="section" id="debug-knobs">
+<span id="sec-usage-debug-knobs"></span><h3>Debug Knobs<a class="headerlink" href="#debug-knobs" title="Permalink to this headline">¶</a></h3>
+<p>The files described in this section are only available when the kernel is
+compiled with <code class="docutils literal"><span class="pre">CONFIG_NVM_DEBUG</span></code>.</p>
+<div class="section" id="l2p-map">
+<h4>l2p_map<a class="headerlink" href="#l2p-map" title="Permalink to this headline">¶</a></h4>
+<p>Query the L2P table for the specified LBA range.</p>
+<p>Usage example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span>echo “0-1023” &gt; /sys/block/pblkdev/pblk/l2p_map
+</pre></div>
+</div>
+<p>lba:0(oob:0) - ppa: 300000000020002: ch:3,lun:0,blk:2,pg:2,pl:0,sec:0 LBA 0 is
+mapped to ppa 0x300000000020002 (ch:3,lun:0,blk:2,pg:2,pl:0,sec:0). Besides
+querying the L2P map, a read command is sent to the device and the result of
+the out-of-bound area is showed too. Note that the out-of-bound area contains
+the LBA to which the physical sector is mapped to.</p>
+</div>
+<div class="section" id="l2p-sanity">
+<h4>l2p_sanity<a class="headerlink" href="#l2p-sanity" title="Permalink to this headline">¶</a></h4>
+<p>Check sanity of the L2P table for a given PPA address on a LBA range.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">At a given point in time, a PPA address should only be mapped to a
+single LBA address. If a PPA is mapped to several LBAs then a corruption on the
+L2P table has occurred.</p>
+</div>
+<p>Usage example (<code class="docutils literal"><span class="pre">$PPA-$LBA_BEGIN-$LBA_END</span></code>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;0-0-10&quot;</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">block</span><span class="o">/</span><span class="n">pblkdev</span><span class="o">/</span><span class="n">pblk</span><span class="o">/</span><span class="n">l2p_sanity</span>
+</pre></div>
+</div>
+<p>Provides no output on success.</p>
+<p>In case a corruption is found, the output will be similar to:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">lba</span><span class="p">:</span><span class="mi">0</span><span class="p">(</span><span class="n">oob</span><span class="p">:</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">ppa</span><span class="p">:</span> <span class="mi">300000000020002</span><span class="p">:</span> <span class="n">ch</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="n">lun</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="n">blk</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="n">pg</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="n">pl</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="n">sec</span><span class="p">:</span><span class="mi">0</span>
+<span class="n">lba</span><span class="p">:</span><span class="mi">0</span><span class="p">(</span><span class="n">oob</span><span class="p">:</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">ppa</span><span class="p">:</span> <span class="mi">300000000020003</span><span class="p">:</span> <span class="n">ch</span><span class="p">:</span><span class="mi">3</span><span class="p">,</span><span class="n">lun</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="n">blk</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="n">pg3</span><span class="p">,</span><span class="n">pl</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="n">sec</span><span class="p">:</span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>Which translates into: LBA 0 is mapped to two different PPAS: 0x300000000020002
+and 0x300000000020003.</p>
+</div>
+<div class="section" id="line-metadata">
+<h4>line_metadata<a class="headerlink" href="#line-metadata" title="Permalink to this headline">¶</a></h4>
+<p>Query the metadata stored on the media for the given line.</p>
+<p>Usage example (<code class="docutils literal"><span class="pre">$LINE_ID-$CMD</span></code>):</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;0-0&quot;</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">block</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">pblk</span><span class="o">/</span><span class="n">line_metadata</span>
+</pre></div>
+</div>
+<p>The <code class="docutils literal"><span class="pre">$CMD</span></code> can be one of the following:</p>
+<dl class="docutils">
+<dt>PBLK_SEE_ONLY_LINE_META</dt>
+<dd>0: Print only the metadata</dd>
+<dt>PBLK_SEE_META_AND_LBAS</dt>
+<dd>1: Print the metadata and the LBA list (L2P portion for line)</dd>
+<dt>PBLK_SEE_META_AND_LBAS_F</dt>
+<dd>3: Print metadata and force to print the LBA list even if CRC checks fail</dd>
+</dl>
+</div>
+<div class="section" id="line-bb">
+<h4>line_bb<a class="headerlink" href="#line-bb" title="Permalink to this headline">¶</a></h4>
+<p>Query bad block metadata for the given line</p>
+<p>Usage example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">echo</span> <span class="s2">&quot;0&quot;</span> <span class="o">&gt;</span> <span class="o">/</span><span class="n">sys</span><span class="o">/</span><span class="n">block</span><span class="o">/</span><span class="n">test</span><span class="o">/</span><span class="n">pblk</span><span class="o">/</span><span class="n">line_bb</span>
+</pre></div>
+</div>
+<p>Provides an output similar to:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">line</span> <span class="mi">0</span><span class="p">,</span> <span class="n">nr_bb</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="n">smeta</span><span class="p">:</span><span class="mi">8</span><span class="p">,</span> <span class="n">emeta</span><span class="p">:</span><span class="mi">1024</span><span class="o">/</span><span class="mi">0</span>
+</pre></div>
+</div>
+<p>Line 0 contains 0 bad blocks; smeta takes 8 sectors; emeta takes 1024 sectors
+and there are 0 bad blocks that affect emeta.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">emeta is typically spread along the last page of all the blocks on
+the line. If a block is bad, then a block will contain 2 pages of metadata</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+           </div>
+           <div class="articleComments">
+            
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="refs.html" class="btn btn-neutral float-right" title="References" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tools.html" class="btn btn-neutral" title="Tools" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, LightNVM.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>
