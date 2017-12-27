@@ -29,7 +29,7 @@ Install it by running:
   make
   sudo make install
 
-Then use the following flags to setup a device with two luns:
+Then use the following flags to setup a device with four luns:
 
 .. code-block:: bash
 
