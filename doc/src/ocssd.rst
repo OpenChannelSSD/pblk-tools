@@ -31,7 +31,7 @@ Install it by running:
   make
   sudo make install
 
-Then use the following flags to setup a device:
+Then use the following flags to setup a device with two luns:
 
 .. code-block:: bash
 
@@ -43,4 +43,5 @@ Then use the following flags to setup a device:
   lba_index=3\
   lbbtable=$DRIVE_BBT,\
   lmetadata=$DRIVE_METADATA,\
-  lmetasize=$DRIVE_METASIZE
+  lmetasize=$DRIVE_METASIZE, \
+  lnum_lun=4,lnum_pln=1,lsecs_per_pg=4
